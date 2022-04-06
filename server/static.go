@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -17,13 +18,14 @@ func InitIndex() {
 	if !strings.Contains(conf.Conf.Assets, "/") {
 		conf.Conf.Assets = conf.DefaultConfig().Assets
 	}
-	index, err = public.Public.Open("index.html")
+	cdnUrl := strings.ReplaceAll(conf.Conf.Assets, "$version", conf.WebTag)
+	cdnUrl = strings.TrimRight(cdnUrl, "/")
+
+	index, err = http.Get(cdnUrl + "index.html")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	data, _ := ioutil.ReadAll(index)
-	cdnUrl := strings.ReplaceAll(conf.Conf.Assets, "$version", conf.WebTag)
-	cdnUrl = strings.TrimRight(cdnUrl, "/")
+	data, _ := ioutil.ReadAll(index.Body)
 	conf.RawIndexHtml = string(data)
 	if strings.Contains(conf.RawIndexHtml, "CDN_URL") {
 		conf.RawIndexHtml = strings.ReplaceAll(conf.RawIndexHtml, "/CDN_URL", cdnUrl)
